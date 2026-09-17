@@ -1,11 +1,11 @@
 # WP2Static
 
-- Contributors: (generic)
+- Contributors: CCW-1
 - Tags: static, export, cache
 - Requires at least: 5.5
 - Tested up to: 6.x
 - Requires PHP: 7.4
-- Stable tag: 0.2.0
+- Stable tag: 0.3.0
 - License: MIT
 
 Crawls your WordPress site over HTTPS and exports a self-contained static

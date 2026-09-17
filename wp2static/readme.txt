@@ -1,11 +1,11 @@
 # WP2Static
 
-- Contributors: (generic)
+- Contributors: CCW-1
 - Tags: static, export, cache
 - Requires at least: 5.5
 - Tested up to: 6.x
 - Requires PHP: 7.4
-- Stable tag: 0.2.0
+- Stable tag: 0.3.0
 - License: MIT
 
 Crawls your WordPress site over HTTPS and exports a self-contained static
@@ -86,6 +86,13 @@ on the live WordPress host (that is what keeps contact forms, quote lists and
 carts functional). The static copy is a mirrored front-end, not an offline app.
 
 ## Changelog
+
+### 0.3.0
+
+- 0.3.0: new "Extra JavaScript" setting — JavaScript is appended to the
+  exported `wp2static.js` on every page, so theme-specific behaviour (e.g.
+  re-randomizing a Divi math captcha on the contact form) can be injected
+  without forking the plugin; author + repo attribution.
 
 ### 0.2.0
 

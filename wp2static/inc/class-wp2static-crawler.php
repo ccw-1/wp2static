@@ -7,6 +7,8 @@
  * page cache), rewrites internal links to local .html files, downloads
  * self-hosted assets, redirects form submissions back to the live PHP
  * endpoints, and injects a small client-side script on each page.
+ *
+ * @link https://github.com/ccw-1/wp2static
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -22,6 +24,7 @@ class Wp2static_Crawler {
 	private $max_pages;
 	private $exclude;
 	private $fetch_assets;
+	private $extra_js;
 
 	private $queue  = array();
 	private $queued = array();
@@ -39,6 +42,7 @@ class Wp2static_Crawler {
 		$this->depth        = max( 1, absint( $opts['depth'] ?? 3 ) );
 		$this->max_pages    = max( 1, absint( $opts['max_pages'] ?? 200 ) );
 		$this->fetch_assets = ! empty( $opts['fetch_assets'] );
+		$this->extra_js     = (string) ( $opts['extra_js'] ?? '' );
 
 		foreach ( preg_split( '/\r?\n/', (string) ( $opts['extra_rewrites'] ?? '' ) ) as $path ) {
 			$path = trim( (string) $path, " \t\r\n/" );
@@ -461,7 +465,7 @@ class Wp2static_Crawler {
 	/**
 	 * AJAX and session-sensitive endpoints are injected into inline scripts as
 	 * absolute `$origin` URLs (wp_localize_script). If the static copy is served
-	 * from a different host (e.g. www.<different>.com) than that origin, the browser
+	 * from a different host (e.g. bare vs. www) than that origin, the browser
 	 * will CORS-block the XHR before the live WP site can answer, so the button
 	 * silently does nothing. Rewriting these to host-relative paths keeps them
 	 * same-origin wherever the export is hosted.
@@ -507,10 +511,15 @@ class Wp2static_Crawler {
 
 	private function install_js() {
 		$src = WP2STATIC_DIR . 'assets/wp2static.js';
-		if ( file_exists( $src ) ) {
-			copy( $src, $this->out_dir . '/wp2static.js' );
-			$this->log( 'Installed wp2static.js in output root.' );
+		if ( ! file_exists( $src ) ) {
+			return;
 		}
+		$content = file_get_contents( $src );
+		if ( '' !== $this->extra_js ) {
+			$content .= "\n/* wp2static extra_js */\n" . $this->extra_js . "\n";
+		}
+		file_put_contents( $this->out_dir . '/wp2static.js', $content );
+		$this->log( 'Installed wp2static.js in output root.' );
 	}
 
 	private function inject_js( $html, $page_url ) {

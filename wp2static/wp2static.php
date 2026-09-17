@@ -2,7 +2,9 @@
 /**
  * Plugin Name:        WP2Static
  * Description:        Crawls your WordPress site and exports a self-contained static version to an output directory. HTML is saved as static files, the client-side script keeps appearance and behavior, and forms keep POSTing to live PHP endpoints so submissions still work.
- * Version:            0.2.0
+ * Version:            0.3.0
+ * Author:             CCW-1
+ * Author URI:         https://github.com/ccw-1/wp2static
  * Requires at least:  5.5
  * Requires PHP:       7.4
  * Text Domain:        wp2static
@@ -12,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'WP2STATIC_VERSION', '0.2.0' );
+define( 'WP2STATIC_VERSION', '0.3.0' );
 define( 'WP2STATIC_DIR', plugin_dir_path( __FILE__ ) );
 define( 'WP2STATIC_URL', plugin_dir_url( __FILE__ ) );
 
@@ -43,6 +45,7 @@ class Wp2static {
 			'fetch_assets'   => 1,
 			'exclude'        => "/wp-admin/\n/wp-login.php\n/wp-json/\n\.php\n",
 			'extra_rewrites' => '',
+			'extra_js'       => '',
 		);
 	}
 
@@ -74,6 +77,7 @@ class Wp2static {
 			'fetch_assets'   => empty( $input['fetch_assets'] ) ? 0 : 1,
 			'exclude'        => isset( $input['exclude'] ) ? trim( $input['exclude'] ) : $defaults['exclude'],
 			'extra_rewrites' => isset( $input['extra_rewrites'] ) ? trim( $input['extra_rewrites'] ) : $defaults['extra_rewrites'],
+			'extra_js'       => isset( $input['extra_js'] ) ? trim( $input['extra_js'] ) : $defaults['extra_js'],
 		);
 		return $out;
 	}
@@ -166,6 +170,14 @@ class Wp2static {
 							<textarea class="large-text code" rows="3" id="wp2static_extra"
 							          name="<?php echo esc_attr( self::OPTION ); ?>[extra_rewrites]"><?php echo esc_textarea( $opts['extra_rewrites'] ); ?></textarea>
 							<p class="description"><?php esc_html_e( 'One root-relative path per line (e.g. /request-quote/). These are rewritten from absolute-home URLs to host-relative paths in the exported HTML, so AJAX endpoints called from the static copy stay same-origin (browsers CORS-block cross-origin XHR). /wp-admin/admin-ajax.php is always rewritten.', 'wp2static' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="wp2static_extrajs"><?php esc_html_e( 'Extra JavaScript', 'wp2static' ); ?></label></th>
+						<td>
+							<textarea class="large-text code" rows="5" id="wp2static_extrajs"
+							          name="<?php echo esc_attr( self::OPTION ); ?>[extra_js]"><?php echo esc_textarea( $opts['extra_js'] ); ?></textarea>
+							<p class="description"><?php esc_html_e( 'Optional JavaScript appended to the exported wp2static.js on every page. Theme-specific behaviour (e.g. re-randomizing a Divi math captcha on the contact form) goes here so the plugin itself stays theme-agnostic.', 'wp2static' ); ?></p>
 						</td>
 					</tr>
 					<tr>
