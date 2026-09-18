@@ -5,7 +5,7 @@
 - Requires at least: 5.5
 - Tested up to: 6.x
 - Requires PHP: 7.4
-- Stable tag: 0.3.0
+- Stable tag: 0.4.0
 - License: MIT
 
 Crawls your WordPress site over HTTPS and exports a self-contained static
@@ -38,6 +38,14 @@ Key behaviors:
   in the "Host-relative path rewrites" setting.
 - Transient HTTP 500/502/503/429 responses are retried up to 3 times so slow or
   flaky hosts do not silently drop pages.
+- Hosts that are the "same site" are configurable. By default the http/https
+  variants of the crawl origin — and, when the origin is an apex host like
+  `example.com`/`www.example.com`, its www/non-www sibling — are treated as
+  internal, and you can add more (a staging URL, a subdomain, a bare hostname)
+  in the "Site aliases" setting. Links to internal hosts are rewritten relative
+  and their assets are downloaded; any other host is treated as external/CDN
+  and left absolute. This is what keeps pages that hard-code a sibling host
+  (e.g. the bare domain while the crawl origin is `www`) fully self-contained.
 
 ## Installation
 
@@ -86,6 +94,14 @@ on the live WordPress host (that is what keeps contact forms, quote lists and
 carts functional). The static copy is a mirrored front-end, not an offline app.
 
 ## Changelog
+
+### 0.4.0
+
+- 0.4.0: "Site aliases" setting. Hosts listed there — plus by default the
+  http/https variants (and, for apex hosts like `example.com`, the www/non-www
+  sibling) of the crawl origin — are treated as the same site, so their links
+  become relative and their assets are downloaded. Absolute form actions on
+  alias hosts are normalized to the canonical origin.
 
 ### 0.2.0
 

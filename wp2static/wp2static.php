@@ -2,7 +2,7 @@
 /**
  * Plugin Name:        WP2Static
  * Description:        Crawls your WordPress site and exports a self-contained static version to an output directory. HTML is saved as static files, the client-side script keeps appearance and behavior, and forms keep POSTing to live PHP endpoints so submissions still work.
- * Version:            0.3.0
+ * Version:            0.4.0
  * Author:             CCW-1
  * Author URI:         https://github.com/ccw-1/wp2static
  * Requires at least:  5.5
@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'WP2STATIC_VERSION', '0.3.0' );
+define( 'WP2STATIC_VERSION', '0.4.0' );
 define( 'WP2STATIC_DIR', plugin_dir_path( __FILE__ ) );
 define( 'WP2STATIC_URL', plugin_dir_url( __FILE__ ) );
 
@@ -43,6 +43,8 @@ class Wp2static {
 			'depth'          => 3,
 			'max_pages'      => 200,
 			'fetch_assets'   => 1,
+			'site_aliases'   => '',
+			'aliases_normalize' => 1,
 			'exclude'        => "/wp-admin/\n/wp-login.php\n/wp-json/\n\.php\n",
 			'extra_rewrites' => '',
 			'extra_js'       => '',
@@ -75,6 +77,8 @@ class Wp2static {
 			'depth'          => isset( $input['depth'] ) ? max( 1, absint( $input['depth'] ) ) : $defaults['depth'],
 			'max_pages'      => isset( $input['max_pages'] ) ? max( 1, absint( $input['max_pages'] ) ) : $defaults['max_pages'],
 			'fetch_assets'   => empty( $input['fetch_assets'] ) ? 0 : 1,
+			'site_aliases'   => isset( $input['site_aliases'] ) ? trim( $input['site_aliases'] ) : $defaults['site_aliases'],
+			'aliases_normalize' => empty( $input['aliases_normalize'] ) ? 0 : 1,
 			'exclude'        => isset( $input['exclude'] ) ? trim( $input['exclude'] ) : $defaults['exclude'],
 			'extra_rewrites' => isset( $input['extra_rewrites'] ) ? trim( $input['extra_rewrites'] ) : $defaults['extra_rewrites'],
 			'extra_js'       => isset( $input['extra_js'] ) ? trim( $input['extra_js'] ) : $defaults['extra_js'],
@@ -162,6 +166,21 @@ class Wp2static {
 								       <?php checked( $opts['fetch_assets'] ); ?> />
 								<?php esc_html_e( 'Download CSS/JS/images into the export (self-hosted only; CDN stays absolute).', 'wp2static' ); ?>
 							</label>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="wp2static_aliases"><?php esc_html_e( 'Site aliases', 'wp2static' ); ?></label></th>
+						<td>
+							<textarea class="large-text code" rows="3" id="wp2static_aliases"
+							          name="<?php echo esc_attr( self::OPTION ); ?>[site_aliases]"><?php echo esc_textarea( $opts['site_aliases'] ); ?></textarea>
+							<p class="description">
+								<label>
+									<input type="checkbox" name="<?php echo esc_attr( self::OPTION ); ?>[aliases_normalize]" value="1"
+									       <?php checked( $opts['aliases_normalize'] ); ?> />
+									<?php esc_html_e( 'Also treat http/https and www/non-www variants of the crawl origin as the same site.', 'wp2static' ); ?>
+								</label><br />
+								<?php esc_html_e( 'One full URL or bare hostname per line (e.g. https://staging.example.com or example.com). Links to these hosts are rewritten to relative paths and their assets are downloaded, instead of being left absolute because the host differs from the crawl origin.', 'wp2static' ); ?>
+							</p>
 						</td>
 					</tr>
 					<tr>

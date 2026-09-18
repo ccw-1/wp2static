@@ -19,6 +19,8 @@ class Wp2static_Crawler {
 
 	private $origin;
 	private $origin_host;
+	private $internal_hosts   = array();
+	private $internal_origins = array();
 	private $out_dir;
 	private $depth;
 	private $max_pages;
@@ -38,11 +40,62 @@ class Wp2static_Crawler {
 	public function __construct( $opts = array() ) {
 		$this->origin       = untrailingslashit( home_url() );
 		$this->origin_host  = strtolower( (string) wp_parse_url( $this->origin, PHP_URL_HOST ) );
+		$this->internal_hosts   = array( $this->origin_host );
+		$this->internal_origins = array( $this->origin );
 		$this->out_dir      = rtrim( (string) ( $opts['output_dir'] ?? '' ), '/\\' );
 		$this->depth        = max( 1, absint( $opts['depth'] ?? 3 ) );
 		$this->max_pages    = max( 1, absint( $opts['max_pages'] ?? 200 ) );
 		$this->fetch_assets = ! empty( $opts['fetch_assets'] );
 		$this->extra_js     = (string) ( $opts['extra_js'] ?? '' );
+
+		// Treat http/https + www/non-www variants of the origin as the same
+		// site (default ON). Sites whose content hard-codes a sibling host
+		// (e.g. bare domain while the crawl origin is www) would otherwise
+		// leave those links/assets absolute and un-downloaded.
+		if ( ! empty( $opts['aliases_normalize'] ) ) {
+			// Scheme (http/https) variants are always siblings. A www. sibling
+			// is only meaningful for apex-style hosts (exactly two labels,
+			// e.g. example.com or www.example.com); for deeper origins such as
+			// blog.example.com there is no www.blog.example.com equivalent, so
+			// it is not invented.
+			$bare  = preg_replace( '/^www\./i', '', $this->origin_host );
+			$hosts = array( $bare );
+			if ( 1 === substr_count( $bare, '.' ) ) {
+				$hosts[] = 'www.' . $bare;
+			}
+			foreach ( array( 'http', 'https' ) as $scheme ) {
+				foreach ( $hosts as $h ) {
+					$v = $scheme . '://' . $h;
+					if ( $v !== $this->origin ) {
+						$this->internal_hosts[]   = $h;
+						$this->internal_origins[] = $v;
+					}
+				}
+			}
+		}
+
+		// Explicit aliases: one full URL or bare hostname per line.
+		foreach ( preg_split( '/\r?\n/', (string) ( $opts['site_aliases'] ?? '' ) ) as $line ) {
+			$line = trim( $line );
+			if ( '' === $line ) {
+				continue;
+			}
+			if ( preg_match( '#^https?://#i', $line ) ) {
+				$v    = untrailingslashit( $line );
+				$host = strtolower( (string) wp_parse_url( $v, PHP_URL_HOST ) );
+				if ( '' !== $host ) {
+					$this->internal_hosts[]   = $host;
+					$this->internal_origins[] = $v;
+				}
+			} elseif ( false === strpos( $line, '/' ) ) {
+				$host = strtolower( trim( $line, " \t\r\n." ) );
+				if ( '' !== $host ) {
+					$this->internal_hosts[] = $host;
+				}
+			}
+		}
+		$this->internal_hosts   = array_values( array_unique( $this->internal_hosts ) );
+		$this->internal_origins = array_values( array_unique( $this->internal_origins ) );
 
 		foreach ( preg_split( '/\r?\n/', (string) ( $opts['extra_rewrites'] ?? '' ) ) as $path ) {
 			$path = trim( (string) $path, " \t\r\n/" );
@@ -69,6 +122,7 @@ class Wp2static_Crawler {
 	public function run( $batch = 5 ) {
 		$this->log( 'Origin: ' . $this->origin );
 		$this->log( 'Output: ' . $this->out_dir );
+		$this->log( 'Internal hosts: ' . implode( ', ', $this->internal_hosts ) );
 
 		if ( empty( $this->origin_host ) ) {
 			$this->log( 'ERROR: invalid origin host.' );
@@ -294,7 +348,7 @@ class Wp2static_Crawler {
 
 	private function is_internal( $url ) {
 		$host = strtolower( (string) parse_url( $url, PHP_URL_HOST ) );
-		return '' !== $host && $host === $this->origin_host;
+		return '' !== $host && in_array( $host, $this->internal_hosts, true );
 	}
 
 	private function path_of( $url ) {
@@ -446,6 +500,10 @@ class Wp2static_Crawler {
 					$dir = preg_replace( '#/[^/]*$#', '/', $base['path'] );
 				}
 				$f->setAttribute( 'action', $this->origin . $dir . $action );
+			} elseif ( $this->is_internal( $action ) && ! $this->is_excluded( $action ) ) {
+				// Absolute action on an alias host: normalize to the canonical
+				// origin so submissions always POST to one live endpoint.
+				$f->setAttribute( 'action', $this->origin . (string) parse_url( $action, PHP_URL_PATH ) . $this->fragment_of( $action ) );
 			}
 		}
 
@@ -471,12 +529,7 @@ class Wp2static_Crawler {
 	 * same-origin wherever the export is hosted.
 	 */
 	private function rewrite_script_urls( $html ) {
-		$bases = array( $this->origin );
-		$www   = (string) preg_replace( '#^(https?)://#i', '$1://www.', $this->origin );
-		if ( $www !== $this->origin ) {
-			$bases[] = $www;
-		}
-		foreach ( $bases as $base ) {
+		foreach ( $this->internal_origins as $base ) {
 			$from = array();
 			$to   = array();
 			foreach ( $this->script_rewrites as $path ) {
