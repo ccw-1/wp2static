@@ -107,7 +107,7 @@ carts functional). The static copy is a mirrored front-end, not an offline app.
 
 - 0.3.0: new "Extra JavaScript" setting — JavaScript is appended to the
   exported `wp2static.js` on every page, so theme-specific behaviour (e.g.
-  re-randomizing a Divi math captcha on the contact form) can be injected
+  re-randomizing a contact form math captcha) can be injected
   without forking the plugin; author + repo attribution.
 
 ### 0.2.0

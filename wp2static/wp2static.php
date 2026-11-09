@@ -196,7 +196,7 @@ class Wp2static {
 						<td>
 							<textarea class="large-text code" rows="5" id="wp2static_extrajs"
 							          name="<?php echo esc_attr( self::OPTION ); ?>[extra_js]"><?php echo esc_textarea( $opts['extra_js'] ); ?></textarea>
-							<p class="description"><?php esc_html_e( 'Optional JavaScript appended to the exported wp2static.js on every page. Theme-specific behaviour (e.g. re-randomizing a Divi math captcha on the contact form) goes here so the plugin itself stays theme-agnostic.', 'wp2static' ); ?></p>
+							<p class="description"><?php esc_html_e( 'Optional JavaScript appended to the exported wp2static.js on every page. Theme-specific behaviour (e.g. re-randomizing a contact form math captcha) goes here so the plugin itself stays theme-agnostic.', 'wp2static' ); ?></p>
 						</td>
 					</tr>
 					<tr>
